@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID CORUJA - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .logo-coruja-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        }
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-container input {
+            width: 100%;
+            padding-right: 70px;
+        }
+        .btn-toggle-input {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #00bcd4;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .btn-toggle-input:hover {
+            color: #00e5ff;
+        }
+        .forgot-password-container {
+            text-align: right;
+            margin-top: 6px;
+            margin-bottom: 20px;
+        }
+        .forgot-password-link {
+            color: #94a3b8;
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .forgot-password-link:hover {
+            color: #00bcd4;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <!-- SEÇÃO DE LOGIN -->
+        <div id="loginSection">
+            <div class="logo-container">
+                <img src="logo-coruja.png" alt="Logo ID Coruja" class="logo-coruja-img" onerror="this.style.border='2px solid red';">
+            </div>
+            
+            <h2 style="margin-top: 10px;">ID CORUJA</h2>
+            
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="loginUser">Nome de Usuário</label>
+                    <input type="text" id="loginUser" required placeholder="Seu usuário">
+                </div>
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label for="loginPass">Senha</label>
+                    <div class="password-container">
+                        <input type="password" id="loginPass" required placeholder="Sua senha">
+                        <button type="button" class="btn-toggle-input" onclick="toggleInputPassword('loginPass', this)">Mostrar</button>
+                    </div>
+                </div>
+                
+                <div class="forgot-password-container">
+                    <a href="#" class="forgot-password-link" onclick="esqueciSenha(event)">Esqueci minha senha</a>
+                </div>
+
+                <button type="submit" class="btn">Entrar</button>
+            </form>
+            <p class="toggle-text">Não tem conta? <a href="#" onclick="alternarTelas(event)">Cadastre-se</a></p>
+        </div>
+
+        <!-- SEÇÃO DE CADASTRO -->
+        <div id="cadastroSection" style="display: none;">
+            <h2>Criar Nova Conta</h2>
+            <form id="cadastroForm">
+                <div class="input-group">
+                    <label for="cadUser">Escolha um Usuário</label>
+                    <input type="text" id="cadUser" required placeholder="Ex: joao123">
+                </div>
+                <div class="input-group">
+                    <label for="cadPass">Escolha uma Senha</label>
+                    <div class="password-container">
+                        <input type="password" id="cadPass" required placeholder="Mínimo 4 caracteres">
+                        <button type="button" class="btn-toggle-input" onclick="toggleInputPassword('cadPass', this)">Mostrar</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); box-shadow: 0 4px 14px rgba(40, 167, 69, 0.3);">Solicitar Cadastro</button>
+            </form>
+            <p class="toggle-text">Já tem conta? <a href="#" onclick="alternarTelas(event)">Voltar ao Login</a></p>
+        </div>
+    </div>
+
+    <script>
+        if (localStorage.getItem('usuarioSessaoAtiva')) {
+            window.location.href = 'dashboard.html';
+        }
+
+        // Garante que a conta inicial do admin mestre exista com status aprovado
+        document.addEventListener("DOMContentLoaded", () => {
+            const usuarios = obterBancoUsuarios();
+            if (!usuarios['admin']) {
+                usuarios['admin'] = { senha: 'admin', aprovado: true };
+                localStorage.setItem('banco_usuarios', JSON.stringify(usuarios));
+            }
+        });
+
+        function toggleInputPassword(inputId, botao) {
+            const inputCampo = document.getElementById(inputId);
+            inputCampo.type = inputCampo.type === "password" ? "text" : "password";
+            botao.textContent = inputCampo.type === "password" ? "Mostrar" : "Ocultar";
+        }
+
+        function alternarTelas(event) {
+            if(event) event.preventDefault();
+            const login = document.getElementById('loginSection');
+            const cadastro = document.getElementById('cadastroSection');
+            
+            document.getElementById('loginPass').type = "password";
+            document.getElementById('cadPass').type = "password";
+            document.querySelectorAll('.btn-toggle-input').forEach(btn => btn.textContent = "Mostrar");
+
+            if (login.style.display === 'none') {
+                login.style.display = 'block';
+                cadastro.style.display = 'none';
+                document.getElementById('cadastroForm').reset();
+            } else {
+                login.style.display = 'none';
+                cadastro.style.display = 'block';
+                document.getElementById('loginForm').reset();
+            }
+        }
+
+        function obterBancoUsuarios() {
+            const banco = localStorage.getItem('banco_usuarios');
+            return banco ? JSON.parse(banco) : {};
+        }
+
+        function esqueciSenha(event) {
+            if(event) event.preventDefault();
+            const usuario = prompt("Digite o nome do usuário que deseja recuperar:");
+            if (!usuario) return;
+
+            const usuariosCadastrados = obterBancoUsuarios();
+            const userKey = usuario.trim();
+
+            if (usuariosCadastrados[userKey]) {
+                const novaSenha = prompt(`Usuário localizado! Digite a nova senha para "${userKey}":`);
+                if (novaSenha && novaSenha.trim().length >= 4) {
+                    usuariosCadastrados[userKey].senha = novaSenha.trim();
+                    localStorage.setItem('banco_usuarios', JSON.stringify(usuariosCadastrados));
+                    alert("Senha alterada com sucesso!");
+                } else if (novaSenha) {
+                    alert("A senha precisa ter no mínimo 4 caracteres.");
+                }
+            } else {
+                alert("Usuário não encontrado!");
+            }
+        }
+
+        // CADASTRO COM SISTEMA DE VALIDAÇÃO REQUERIDA
+        document.getElementById('cadastroForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('cadUser').value.trim();
+            const senha = document.getElementById('cadPass').value.trim();
+
+            if (usuario.length === 0 || senha.length < 4) {
+                alert('O usuário não pode ser vazio e a senha precisa ter ao menos 4 caracteres.');
+                return;
+            }
+
+            const usuariosCadastrados = obterBancoUsuarios();
+
+            if (usuariosCadastrados[usuario]) {
+                alert('Este nome de usuário já está sendo usado!');
+                return;
+            }
+
+            // Salva a nova conta com o status falso de aprovação
+            usuariosCadastrados[usuario] = {
+                senha: senha,
+                aprovado: false
+            };
+            
+            localStorage.setItem('banco_usuarios', JSON.stringify(usuariosCadastrados));
+
+            alert('Solicitação de cadastro enviada! Aguarde a aprovação do administrador para conseguir acessar.');
+            alternarTelas();
+        });
+
+        // LOGIN COM VERIFICAÇÃO DE STATUS ATIVO
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('loginUser').value.trim();
+            const senha = document.getElementById('loginPass').value.trim();
+            const usuariosCadastrados = obterBancoUsuarios();
+
+            const conta = usuariosCadastrados[usuario];
+
+            if (conta && (conta.senha === senha || (typeof conta === 'string' && conta === senha))) {
+                // Se for uma conta antiga convertida ou uma conta nova, trata o objeto
+                const isAprovado = (typeof conta === 'object') ? conta.aprovado : true;
+
+                if (!isAprovado) {
+                    alert('Acesso Negado! Sua conta ainda não foi ativada pelo administrador.');
+                    return;
+                }
+
+                localStorage.setItem('usuarioSessaoAtiva', usuario);
+                window.location.href = 'dashboard.html';
+            } else {
+                alert('Usuário ou senha incorretos!');
+            }
+        });
+    </script>
+</body>
+</html>
