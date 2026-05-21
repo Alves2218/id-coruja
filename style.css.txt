@@ -1,0 +1,126 @@
+/* Configuração Geral e Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Fundo da Página (Modo Noturno Escuro) */
+body {
+    background-color: #0b111e; /* Azul escuro profundo */
+    background-image: radial-gradient(circle at center, #152238 0%, #0b111e 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Cartão Central (Container de Login/Cadastro) */
+.card-container {
+    background-color: #111a2e; /* Azul escuro azulado */
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid #1e2d4a; /* Borda sutil */
+    box-shadow: 0 8px 32px rgba(0, 123, 255, 0.15); /* Brilho neon sutil */
+    width: 100%;
+    max-width: 400px;
+    transition: all 0.3s ease;
+}
+
+/* Títulos */
+h2 {
+    text-align: center;
+    color: #e2e8f0; /* Branco acinzentado */
+    margin-bottom: 24px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Grupos de Entrada de Texto */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    margin-bottom: 8px;
+    color: #94a3b8; /* Texto secundário claro */
+    font-size: 14px;
+}
+
+/* Caixas de Texto (Inputs) */
+.input-group input {
+    padding: 12px 16px;
+    background-color: #1e293b; /* Fundo do input escuro */
+    border: 1px solid #334155;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #f8fafc; /* Texto digitado branco */
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+/* Efeito de Foco nos Inputs (Brilho Neon Azul) */
+.input-group input:focus {
+    border-color: #00bcd4; /* Azul ciano neon */
+    box-shadow: 0 0 8px rgba(0, 188, 212, 0.4);
+    background-color: #1e293b;
+}
+
+/* Botão Principal (Entrar) */
+.btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #007bff 0%, #00bcd4 100%); /* Degradê neon */
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(0, 188, 212, 0.3);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 188, 212, 0.5);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* Botão Sair (Vermelho Neon) */
+.btn-sair {
+    background: linear-gradient(135deg, #dc3545 0%, #ff4d4d 100%);
+    box-shadow: 0 4px 14px rgba(220, 53, 69, 0.3);
+}
+
+.btn-sair:hover {
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.5);
+}
+
+/* Links de Alternância (Cadastre-se / Voltar) */
+.toggle-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.toggle-text a {
+    color: #00bcd4;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+
+.toggle-text a:hover {
+    color: #00e5ff;
+    text-decoration: underline;
+}
