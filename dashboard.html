@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID CORUJA - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-container {
+            background-color: #111a2e;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #1e2d4a;
+            box-shadow: 0 8px 32px rgba(0, 123, 255, 0.15);
+            width: 90%;
+            max-width: 700px;
+            margin: 20px;
+            color: #e2e8f0;
+        }
+        .header-dashboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1e2d4a;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .welcome-box {
+            background-color: #162238;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #233554;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .welcome-box h1 {
+            color: #00bcd4;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .welcome-box p {
+            color: #94a3b8;
+            font-size: 16px;
+        }
+        .counter-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-left: 5px solid #00bcd4;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .counter-card h3 {
+            font-size: 14px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .counter-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ffffff;
+            font-family: monospace;
+        }
+        .admin-box {
+            background-color: #162238;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #233554;
+            margin-top: 20px;
+        }
+        .admin-box h3 {
+            color: #00bcd4;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #233554;
+            padding-bottom: 8px;
+            text-align: center;
+        }
+        .admin-secao-lista {
+            margin-bottom: 20px;
+        }
+        .admin-secao-lista h4 {
+            color: #e2e8f0;
+            font-size: 14px;
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+        .lista-usuarios-ul {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #233554;
+            border-radius: 6px;
+            background-color: #111a2e;
+        }
+        .item-user-li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #233554;
+        }
+        .item-user-li:last-child { border-bottom: none; }
+        .btn-mini {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+        .btn-aprovar { background-color: #28a745; margin-right: 5px;}
+        .btn-aprovar:hover { background-color: #218838; }
+        .btn-remover { background-color: #dc3545; }
+        .btn-remover:hover { background-color: #bd2130; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header-dashboard">
+            <h2>📊 Painel ID CORUJA</h2>
+            <button onclick="logout()" class="btn btn-sair" style="width: auto; display: inline-block; padding: 8px 15px; font-size: 14px;">Sair do Sistema</button>
+        </div>
+
+        <div class="welcome-box">
+            <h1>Bem-vindo(a)!</h1>
+            <p>Você está conectado como: <strong id="nomeUsuarioExibição" style="color: #ffffff;">...</strong></p>
+            <button onclick="window.location.href='banco.html'" class="btn" style="margin-top: 20px; max-width: 250px;">Acessar Banco de Indivíduos</button>
+        </div>
+
+        <div class="counter-card">
+            <h3>Total de Indivíduos Cadastrados</h3>
+            <div id="totalIndividuosContador" class="counter-number">0</div>
+        </div>
+
+        <div id="adminArea" class="admin-box" style="display: none;">
+            <h3>🛡️ Gestão de Acessos ID CORUJA</h3>
+            
+            <div class="admin-secao-lista">
+                <h4 style="color: #ffc107;">⚠️ Solicitações Pendentes de Aprovação</h4>
+                <ul id="listaPendentes" class="lista-usuarios-ul"></ul>
+            </div>
+
+            <div class="admin-secao-lista">
+                <h4 style="color: #28a745;">✅ Operadores Ativos no Sistema</h4>
+                <ul id="listaAtivos" class="lista-usuarios-ul"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const usuarioSessao = localStorage.getItem("usuarioSessaoAtiva");
+            
+            if (!usuarioSessao) {
+                alert("Acesso negado. Por favor, faça login.");
+                window.location.href = "index.html"; 
+                return;
+            }
+
+            document.getElementById("nomeUsuarioExibição").textContent = usuarioSessao;
+            atualizarContadorIndividuos();
+
+            if (usuarioSessao.toLowerCase() === "admin") {
+                document.getElementById("adminArea").style.display = "block";
+                atualizarGerenciamentoUsuarios();
+            }
+        });
+
+        function atualizarContadorIndividuos() {
+            const bancoIndividuosRaw = localStorage.getItem('db_individuos_lista');
+            const listaIndividuos = bancoIndividuosRaw ? JSON.parse(bancoIndividuosRaw) : [];
+            document.getElementById('totalIndividuosContador').textContent = listaIndividuos.length;
+        }
+
+        function obterBancoUsuarios() {
+            const banco = localStorage.getItem('banco_usuarios');
+            return banco ? JSON.parse(banco) : {};
+        }
+
+        function atualizarGerenciamentoUsuarios() {
+            const usuarios = obterBancoUsuarios();
+            const ulPendentes = document.getElementById("listaPendentes");
+            const ulAtivos = document.getElementById("listaAtivos");
+            
+            ulPendentes.innerHTML = "";
+            ulAtivos.innerHTML = "";
+
+            let contPendentes = 0;
+            let contAtivos = 0;
+
+            Object.keys(usuarios).forEach(user => {
+                const conta = usuarios[user];
+                const aprovado = (typeof conta === 'object') ? conta.aprovado : true;
+
+                const li = document.createElement("li");
+                li.className = "item-user-li";
+
+                if (!aprovado) {
+                    contPendentes++;
+                    li.innerHTML = `
+                        <span style="color: #f8fafc; font-weight: bold;">${user}</span>
+                        <div>
+                            <button class="btn-mini btn-aprovar" onclick="alterarStatusUsuario('${user}', true)">Aprovar</button>
+                            <button class="btn-mini btn-remover" onclick="deletarUsuario('${user}')">Recusar</button>
+                        </div>
+                    `;
+                    ulPendentes.appendChild(li);
+                } else {
+                    contAtivos++;
+                    li.innerHTML = `
+                        <span style="color: #f8fafc;">${user} ${user.toLowerCase() === 'admin' ? '<span style="color:#00bcd4;">(Mestre)</span>' : ''}</span>
+                        <div>
+                            ${user.toLowerCase() !== 'admin' ? `<button class="btn-mini btn-remover" onclick="deletarUsuario('${user}')">Bloquear</button>` : '<small style="color:#94a3b8;">Protegido</small>'}
+                        </div>
+                    `;
+                    ulAtivos.appendChild(li);
+                }
+            });
+
+            if(contPendentes === 0) ulPendentes.innerHTML = `<li style="padding:10px; color:#94a3b8; text-align:center; font-size:13px;">Nenhuma solicitação pendente.</li>`;
+            if(contAtivos === 0) ulAtivos.innerHTML = `<li style="padding:10px; color:#94a3b8; text-align:center; font-size:13px;">Nenhum operador ativo.</li>`;
+        }
+
+        function alterarStatusUsuario(usuario, status) {
+            const usuarios = obterBancoUsuarios();
+            if (usuarios[usuario]) {
+                usuarios[usuario].aprovado = status;
+                localStorage.setItem('banco_usuarios', JSON.stringify(usuarios));
+                atualizarGerenciamentoUsuarios();
+                alert(`Usuário "${usuario}" aprovado com sucesso!`);
+            }
+        }
+
+        function deletarUsuario(usuario) {
+            if (confirm(`Tem certeza que deseja aplicar essa ação na conta "${usuario}"?`)) {
+                const usuarios = obterBancoUsuarios();
+                delete usuarios[usuario];
+                localStorage.setItem('banco_usuarios', JSON.stringify(usuarios));
+                atualizarGerenciamentoUsuarios();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("usuarioSessaoAtiva"); 
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
