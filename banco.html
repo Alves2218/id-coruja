@@ -227,6 +227,119 @@
         function formatarData(d) { if(!d) return ""; const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
         const CleanText = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         function logout() { localStorage.removeItem("usuarioSessaoAtiva"); window.location.href = "index.html"; }
-    </script>
+    </script><script>
+    // ⚠️ ENCOSTE AQUI O SEU LINK COPIADO DO MOCKAPI (Mantenha a barra no final)
+    const API_URL = "https://6a0de3e6769682b8ee76fd72.mockapi.io/individuos"; 
+    
+    let fotoStringBase64 = ""; 
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!localStorage.getItem("usuarioSessaoAtiva")) {
+            window.location.href = "index.html";
+            return;
+        }
+        puxarDadosNuvem(); // Carrega os dados coletivos da nuvem ao abrir a página
+    });
+
+    function mascaraCPF(input) {
+        let v = input.value.replace(/\D/g, "");
+        if (v.length > 3) v = v.replace(/^(\d{3})(\d)/, "$1.$2");
+        if (v.length > 6) v = v.replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3");
+        if (v.length > 9) v = v.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
+        input.value = v;
+    }
+
+    document.getElementById('inputFoto').addEventListener('change', function(e) {
+        const arquivo = e.target.files;
+        if (arquivo) {
+            const leitor = new FileReader();
+            leitor.onload = function(event) {
+                fotoStringBase64 = event.target.result;
+                document.getElementById('fotoBoxPreview').innerHTML = `<img src="${fotoStringBase64}" style="width:100%; height:100%; object-fit:cover;">`;
+            };
+            leitor.readAsDataURL(arquivo);
+        }
+    });
+
+    // GRAVAR INDIVÍDUO NA NUVEM COLETIVA
+    document.getElementById('formIndividuo').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!fotoStringBase64) { alert("Por favor, anexe uma foto!"); return; }
+
+        const novoIndividuo = {
+            foto: fotoStringBase64,
+            nome: document.getElementById('indNome').value.trim(),
+            alcunha: document.getElementById('indAlcunha').value.trim(),
+            cpf: document.getElementById('indCpf').value.trim(),
+            nascimento: formatarData(document.getElementById('indNasc').value),
+            filiacao: document.getElementById('indFiliacao').value.trim(),
+            endereco: document.getElementById('indEndereco').value.trim(),
+            obs: document.getElementById('indObs').value.trim() || "Nenhuma"
+        };
+
+        // Envia o registro para o servidor online
+        await fetch(`${API_URL}individuos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(novoIndividuo)
+        });
+
+        document.getElementById('formIndividuo').reset();
+        document.getElementById('fotoBoxPreview').innerHTML = "<span>Clique para<br>anexar foto</span>";
+        fotoStringBase64 = "";
+        puxarDadosNuvem(); // Atualiza a tabela com o novo registro na rede
+    });
+
+    // BUSCAR TODOS OS REGISTROS DA NUVEM COMPARTILHADA
+    async function puxarDadosNuvem() {
+        const resposta = await fetch(`${API_URL}individuos`);
+        const dados = await resposta.json();
+        
+        const corpo = document.getElementById('corpoTabela');
+        corpo.innerHTML = "";
+
+        if (!dados || dados.length === 0) {
+            document.getElementById('totalRegistros').textContent = "0";
+            corpo.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Nenhum indivíduo na nuvem coletiva.</td></tr>`;
+            return;
+        }
+
+        document.getElementById('totalRegistros').textContent = dados.length;
+
+        dados.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><img src="${p.foto}" class="tabela-foto-perfil" alt="Foto" onclick="abrirZoom('${p.foto}')"></td>
+                <td style="font-weight: bold; color: white;">${CleanText(p.nome)}</td>
+                <td style="color: #00bcd4; font-weight: bold;">${CleanText(p.alcunha)}</td>
+                <td>${CleanText(p.cpf)}</td>
+                <td>${CleanText(p.nascimento)}</td>
+                <td>${CleanText(p.filiacao)}</td>
+                <td>${CleanText(p.endereco)}</td>
+                <td style="color: #94a3b8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${CleanText(p.obs)}</td>
+                <td>
+                    <button class="btn-acao btn-excluir" onclick="deletarNuvem('${p.id}')">Excluir</button>
+                </td>
+            `;
+            corpo.appendChild(tr);
+        });
+    }
+
+    // REMOVER REGISTRO DA NUVEM GLOBAL (APAGA PARA TODOS OS OPERADORES)
+    async function deletarNuvem(id) {
+        if (confirm("Atenção: Deseja apagar esse registro da nuvem para TODOS os usuários do sistema?")) {
+            await fetch(`${API_URL}individuos/${id}`, { method: 'DELETE' });
+            puxarDadosNuvem(); // Sincroniza a tabela novamente
+        }
+    }
+
+    function abrirZoom(src) { const m = document.getElementById('modalZoom'); document.getElementById('imagemZoom').src = src; m.style.display = "flex"; }
+    function fecharZoom() { document.getElementById('modalZoom').style.display = "none"; }
+    function filtrarTabela() { const t = document.getElementById('campoBusca').value.toLowerCase(); document.querySelectorAll('#corpoTabela tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(t) ? "" : "none"); }
+    function formatarData(d) { if(!d) return ""; const p = d.split('-'); return `${p}/${p}/${p}`; }
+    const CleanText = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function logout() { localStorage.removeItem("usuarioSessaoAtiva"); window.location.href = "index.html"; }
+</script>
+
 </body>
 </html>
