@@ -35,7 +35,7 @@
 <body>
     <div class="banco-container">
         <div class="header-banco">
-            <h2>🗂️ Banco de Dados Online Compartilhado</h2>
+            <h2>🗂️ Banco de Dados de Indivíduos</h2>
             <div>
                 <button onclick="window.location.href='dashboard.html'" class="btn" style="width: auto; display: inline-block; padding: 8px 15px; margin-right: 10px; background: #495057; box-shadow: none;">Voltar</button>
                 <button onclick="logout()" class="btn btn-sair" style="width: auto; display: inline-block; padding: 8px 15px;">Sair</button>
@@ -82,12 +82,12 @@
                         <label for="indObs">Observações Gerais</label>
                         <input type="text" id="indObs" placeholder="Restrições ou notas adicionais">
                     </div>
-                    <button type="submit" class="btn">Salvar em Rede</button>
+                    <button type="submit" class="btn">Salvar no Banco</button>
                 </form>
             </div>
 
             <div class="painel-tabela">
-                <h3>Registros Coletivos (<span id="totalRegistros">0</span>)</h3>
+                <h3>Registros Salvos (<span id="totalRegistros">0</span>)</h3>
                 <input type="text" id="campoBusca" class="barra-busca" placeholder="🔍 Buscar por nome, alcunha, CPF..." oninput="filtrarTabela()">
                 <div class="tabela-wrapper">
                     <table>
@@ -116,9 +116,6 @@
     </div>
 
     <script>
-        // ⚠️ ENCOSTE AQUI O LINK COMPLETO COPIADO DO MOCKAPI (Mantenha a barra no final)
-        const API_URL = "SUA_URL_DO_MOCKAPI_AQUI/"; 
-        
         let fotoStringBase64 = ""; 
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -126,7 +123,7 @@
                 window.location.href = "index.html";
                 return;
             }
-            puxarDadosNuvem();
+            renderizarTabela();
         });
 
         function mascaraCPF(input) {
@@ -149,51 +146,56 @@
             }
         });
 
-        // ENVIAR PARA A NUVEM
-        document.getElementById('formIndividuo').addEventListener('submit', async function(e) {
+        function obterBancoIndividuos() {
+            const banco = localStorage.getItem('db_individuos_lista');
+            return banco ? JSON.parse(banco) : [];
+        }
+
+        document.getElementById('formIndividuo').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (!fotoStringBase64) { alert("Anexe uma foto!"); return; }
+            if (!fotoStringBase64) { alert("Por favor, anexe uma foto!"); return; }
+
+            const cpf = document.getElementById('indCpf').value.trim();
+            const lista = obterBancoIndividuos();
+
+            if (lista.some(p => p.cpf === cpf)) {
+                alert("Este CPF já está registrado!");
+                return;
+            }
 
             const novoIndividuo = {
+                id: Date.now(),
                 foto: fotoStringBase64,
                 nome: document.getElementById('indNome').value.trim(),
                 alcunha: document.getElementById('indAlcunha').value.trim(),
-                cpf: document.getElementById('indCpf').value.trim(),
+                cpf: cpf,
                 nascimento: formatarData(document.getElementById('indNasc').value),
                 filiacao: document.getElementById('indFiliacao').value.trim(),
                 endereco: document.getElementById('indEndereco').value.trim(),
                 obs: document.getElementById('indObs').value.trim() || "Nenhuma"
             };
 
-            await fetch(`${API_URL}individuos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(novoIndividuo)
-            });
+            lista.push(novoIndividuo);
+            localStorage.setItem('db_individuos_lista', JSON.stringify(lista));
 
             document.getElementById('formIndividuo').reset();
             document.getElementById('fotoBoxPreview').innerHTML = "<span>Clique para<br>anexar foto</span>";
             fotoStringBase64 = "";
-            puxarDadosNuvem();
+            renderizarTabela();
         });
 
-        // PUXAR DA NUVEM
-        async function puxarDadosNuvem() {
-            const resposta = await fetch(`${API_URL}individuos`);
-            const dados = await resposta.json();
-            
+        function renderizarTabela() {
+            const lista = obterBancoIndividuos();
+            document.getElementById('totalRegistros').textContent = lista.length;
             const corpo = document.getElementById('corpoTabela');
             corpo.innerHTML = "";
 
-            if (!dados || dados.length === 0) {
-                document.getElementById('totalRegistros').textContent = "0";
-                corpo.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Nenhum indivíduo online.</td></tr>`;
+            if (lista.length === 0) {
+                corpo.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Nenhum indivíduo cadastrado ainda.</td></tr>`;
                 return;
             }
 
-            document.getElementById('totalRegistros').textContent = dados.length;
-
-            dados.forEach(p => {
+            lista.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><img src="${p.foto}" class="tabela-foto-perfil" alt="Foto" onclick="abrirZoom('${p.foto}')"></td>
@@ -204,19 +206,18 @@
                     <td>${CleanText(p.filiacao)}</td>
                     <td>${CleanText(p.endereco)}</td>
                     <td style="color: #94a3b8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${CleanText(p.obs)}</td>
-                    <td>
-                        <button class="btn-acao btn-excluir" onclick="deletarNuvem('${p.id}')">Excluir</button>
-                    </td>
+                    <td><button class="btn-acao btn-excluir" onclick="removerIndividuo(${p.id})">Excluir</button></td>
                 `;
                 corpo.appendChild(tr);
             });
         }
 
-        // DELETAR DA NUVEM
-        async function deletarNuvem(id) {
-            if (confirm("Deseja apagar esse registro da nuvem para TODOS os usuários?")) {
-                await fetch(`${API_URL}individuos/${id}`, { method: 'DELETE' });
-                puxarDadosNuvem();
+        function removerIndividuo(id) {
+            if (confirm("Deseja apagar este registro?")) {
+                let lista = obterBancoIndividuos();
+                lista = lista.filter(p => p.id !== id);
+                localStorage.setItem('db_individuos_lista', JSON.stringify(lista));
+                renderizarTabela();
             }
         }
 
