@@ -120,22 +120,26 @@
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- CABEÇALHO -->
         <div class="header-dashboard">
             <h2>📊 Painel ID CORUJA</h2>
             <button onclick="logout()" class="btn btn-sair" style="width: auto; display: inline-block; padding: 8px 15px; font-size: 14px;">Sair do Sistema</button>
         </div>
 
+        <!-- MENSAGEM PRINCIPAL -->
         <div class="welcome-box">
             <h1>Bem-vindo(a)!</h1>
             <p>Você está conectado como: <strong id="nomeUsuarioExibição" style="color: #ffffff;">...</strong></p>
             <button onclick="window.location.href='banco.html'" class="btn" style="margin-top: 20px; max-width: 250px;">Acessar Banco de Indivíduos</button>
         </div>
 
+        <!-- CARD CONTADOR -->
         <div class="counter-card">
             <h3>Total de Indivíduos Cadastrados</h3>
-            <div id="totalIndividuosContador" class="counter-number">0</div>
+            <div id="totalIndividuosContador" class="counter-number">Carregando...</div>
         </div>
 
+        <!-- GESTÃO ADM AVANÇADA (SÓ APARECE PRO USER 'admin') -->
         <div id="adminArea" class="admin-box" style="display: none;">
             <h3>🛡️ Gestão de Acessos ID CORUJA</h3>
             
@@ -152,6 +156,9 @@
     </div>
 
     <script>
+        // ⚠️ ENCOSTE AQUI O SEU LINK COPIADO DO MOCKAPI (Mantenha a barra no final)
+        const API_URL = "https://6a0de3e6769682b8ee76fd72.mockapi.io/individuos"; 
+
         document.addEventListener("DOMContentLoaded", () => {
             const usuarioSessao = localStorage.getItem("usuarioSessaoAtiva");
             
@@ -170,10 +177,17 @@
             }
         });
 
-        function atualizarContadorIndividuos() {
-            const bancoIndividuosRaw = localStorage.getItem('db_individuos_lista');
-            const listaIndividuos = bancoIndividuosRaw ? JSON.parse(bancoIndividuosRaw) : [];
-            document.getElementById('totalIndividuosContador').textContent = listaIndividuos.length;
+        // PUXA A CONTAGEM REAL DIRETO DA REDE ONLINE
+        async function atualizarContadorIndividuos() {
+            try {
+                const resposta = await fetch(`${API_URL}individuos`);
+                const dados = await resposta.json();
+                const total = dados ? dados.length : 0;
+                document.getElementById('totalIndividuosContador').textContent = total;
+            } catch (error) {
+                console.error("Erro ao conectar à rede:", error);
+                document.getElementById('totalIndividuosContador').textContent = "Erro";
+            }
         }
 
         function obterBancoUsuarios() {
